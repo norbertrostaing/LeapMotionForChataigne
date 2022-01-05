@@ -56,9 +56,11 @@ function updateIP() {
 function moduleParameterChanged(param)
 {
 	if (param.isParameter()) {
-		script.log("Module parameter changed : "+param.name+" > "+param.get());
+		//script.log("Module parameter changed : "+param.name+" > "+param.get());
 		if (param.name == "leapIP") {
 			updateIP();
+		} else if (param.name == "connected") {
+			local.send(JSON.stringify({background: true}));
 		}
 	} else {
 		script.log("Module parameter triggered : "+param.name);	
@@ -73,10 +75,10 @@ function moduleValueChanged(value)
 {
 	if(value.isParameter())
 	{
-		script.log("Module value changed : "+value.name+" > "+value.get());	
+		// script.log("Module value changed : "+value.name+" > "+value.get());	
 	}else 
 	{
-		script.log("Module value triggered : "+value.name);	
+		// script.log("Module value triggered : "+value.name);	
 	}
 }
 
@@ -94,11 +96,11 @@ local.sendBytes(30,210,46,255,10); //This will send all the bytes passed in as t
 
 function wsMessageReceived(message)
 {
-	script.log("Websocket message received : " +message);
+	// script.log("Websocket message received : " +message);
 	var data = JSON.parse(message);
-	script.log(data.hands);
+	// script.log(data.hands);
 	var handsId = {};
-	for (var i = 0; i < Math.min(1,data.hands.length); i++) {
+	for (var i = 0; i < data.hands.length; i++) {
 		var contId = -1;
 		if (data.hands[i].type == "left") { contId = 1;}
 		if (data.hands[i].type == "right") { contId = 0;}
@@ -113,11 +115,13 @@ function wsMessageReceived(message)
 		vars[contId].grabStrength.set(data.hands[i].grabStrength);
 		vars[contId].pinchDistance.set(data.hands[i].pinchDistance);
 		vars[contId].pinchStrength.set(data.hands[i].pinchStrength);
-		handsId[""+data.hands[i].handId] = contId;
+		handsId[""+data.hands[i].id] = contId;
+
 	}
 
 	for (var i = 0; i < Math.min(10,data.pointables.length); i++) {
-		if (handsId[""+data.pointables[i].handId] < 2) {
+		var contId = handsId[""+data.pointables[i].handId];
+		if (contId < 2) {
 			var type = data.pointables[i].type;
 			vars[contId]["direction"+type].set(data.pointables[i].direction);
 			vars[contId]["extended"+type].set(data.pointables[i].extended);
