@@ -1,0 +1,46 @@
+{
+	"name": "Leap Motion",
+	"type": "WebSocket Client",
+	"path": "Hardware",
+	
+	"version": "0.1",
+	"description": "Use your leap motion with chataigne",
+	"url":"https://github.com/norbertrostaing/LeapMotionforChataigne",
+	"downloadURL": "https://github.com/norbertrostaing/LeapMotionforChataigne/archive/refs/heads/main.zip",
+	
+	"hasInput": true,
+	"hasOutput": false, 
+
+	"hideDefaultCommands": true,
+	"hideDefaultParameters": [
+		"serverPath",
+		"autoAdd",
+		"protocol",
+		"messageStructure",
+		"firstValueIsTheName",
+		"useSecureConnection"
+	],
+	
+	"defaults": {
+		"protocol":"JSON",
+		"autoAdd":false,
+	},
+	
+	"parameters": {
+		"Leap IP": {
+			"type": "String",
+			"default": "127.0.0.1", 
+		}, 
+	},
+	
+	"scripts": [
+		"leapMotion.js"
+	],
+	
+	"values": {
+	},
+	
+	"commands": {
+		
+	}
+}
