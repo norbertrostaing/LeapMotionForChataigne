@@ -8,6 +8,7 @@ function init()
 	for (var i = 0; i< 2; i++) {
 		vars[i] = {};
 		vars[i].container = local.values.addContainer(handNames[i]+" Hand");
+		vars[i].isPresent = vars[i].container.addBoolParameter("Is Present", "is the hand present",false);
 		vars[i].direction = vars[i].container.addPoint3DParameter("Direction", "direction",[0,0,0]);
 		vars[i].direction.setRange([-1,-1,-1], [1,1,1]);
 		vars[i].palmNormal = vars[i].container.addPoint3DParameter("Palm Normal", "Palm Normal",[0,0,0]);
@@ -26,6 +27,7 @@ function init()
 			vars[i]["direction"+j] = tempCont.addPoint3DParameter(fingerNames[j]+" direction", "", [0,0,0]);
 			vars[i]["extended"+j] = tempCont.addBoolParameter(fingerNames[j]+" extended", "", false);
 			vars[i]["tipPosition"+j] = tempCont.addPoint3DParameter(fingerNames[j]+" tipPosition", "", [0,0,0]);
+			vars[i]["carpPosition"+j] = tempCont.addPoint3DParameter(fingerNames[j]+" carpPosition", "", 0);
 		}
 	}
 }
@@ -96,16 +98,22 @@ local.sendBytes(30,210,46,255,10); //This will send all the bytes passed in as t
 
 function wsMessageReceived(message)
 {
-	// script.log("Websocket message received : " +message);
+	script.log("Websocket message received : " +message);
 	var data = JSON.parse(message);
 	// script.log(data.hands);
 	var handsId = {};
+	var isPresent = [false, false];
+
 	for (var i = 0; i < data.hands.length; i++) {
 		var contId = -1;
-		if (data.hands[i].type == "left") { contId = 1;}
-		if (data.hands[i].type == "right") { contId = 0;}
+		if (data.hands[i].type == "left") { contId = 1; }
+		if (data.hands[i].type == "right") { contId = 0; }
 		if (!data.hands[i].confidence >= 1) {contId = -1;}
 		
+		if (contId >=0) {
+			isPresent[i] = true;
+		}
+
 		vars[contId].direction.set(data.hands[i].direction);
 		vars[contId].palmNormal.set(data.hands[i].palmNormal);
 		vars[contId].palmPosition.set(data.hands[i].palmPosition);
@@ -116,9 +124,7 @@ function wsMessageReceived(message)
 		vars[contId].pinchDistance.set(data.hands[i].pinchDistance);
 		vars[contId].pinchStrength.set(data.hands[i].pinchStrength);
 		handsId[""+data.hands[i].id] = contId;
-
 	}
-
 	for (var i = 0; i < Math.min(10,data.pointables.length); i++) {
 		var contId = handsId[""+data.pointables[i].handId];
 		if (contId < 2) {
@@ -126,6 +132,16 @@ function wsMessageReceived(message)
 			vars[contId]["direction"+type].set(data.pointables[i].direction);
 			vars[contId]["extended"+type].set(data.pointables[i].extended);
 			vars[contId]["tipPosition"+type].set(data.pointables[i].tipPosition);
+			vars[contId]["carpPosition"+type].set(data.pointables[i].carpPosition);
+		}
+	}
+
+	for (var i = 0; i< 2; i++) {
+		if (isPresent[i] && !vars[i].isPresent.get()) {
+			vars[i].isPresent.set(true);
+		}
+		if (!isPresent[i] && vars[i].isPresent.get()) {
+			vars[i].isPresent.set(false);
 		}
 	}
 
