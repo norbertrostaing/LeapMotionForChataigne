@@ -1,6 +1,6 @@
 var vars = [];
 var fingerNames = ["Thumb", "Index", "Middle", "Ring", "Pinky"];
-var handNames = ["Right", "Left"];
+var handNames = ["Left", "Right"];
 
 function init()
 {
@@ -14,20 +14,25 @@ function init()
 		vars[i].palmNormal = vars[i].container.addPoint3DParameter("Palm Normal", "Palm Normal",[0,0,0]);
 		vars[i].palmNormal.setRange([-1,-1,-1], [1,1,1]);
 		vars[i].palmPosition = vars[i].container.addPoint3DParameter("Palm Position", "Palm Position",[0,0,0]);
+		vars[i].palmPosition.setRange([-1,0,-1], [1,1,1]);
 		vars[i].palmVelocity = vars[i].container.addPoint3DParameter("Palm Velocity", "Palm Velocity",[0,0,0]);
+		vars[i].palmVelocity.setRange([-2,-2,-2], [2,2,2]);
 		vars[i].timeVisible = vars[i].container.addFloatParameter("Time Visible", "Time Visible",0,0);
 
-		vars[i].grabAngle = vars[i].container.addFloatParameter("grabAngle", "grabAngle", 0 ,0);
+		vars[i].grabAngle = vars[i].container.addFloatParameter("grabAngle", "grabAngle", 0 ,0, 1);
 		vars[i].grabStrength = vars[i].container.addFloatParameter("grabStrength", "grabStrength", 0 ,0, 1);
-		vars[i].pinchDistance = vars[i].container.addFloatParameter("pinchDistance", "pinchDistance", 0 ,0);
+		vars[i].pinchDistance = vars[i].container.addFloatParameter("pinchDistance", "pinchDistance", 0 ,0, 1);
 		vars[i].pinchStrength = vars[i].container.addFloatParameter("pinchStrength", "pinchStrength", 0 ,0, 1);
 
 		for (var j = 0; j< 5; j++) {
 			var tempCont = vars[i].container.addContainer(fingerNames[j]);
 			vars[i]["direction"+j] = tempCont.addPoint3DParameter(fingerNames[j]+" direction", "", [0,0,0]);
+			vars[i]["direction"+j].setRange([-1,-1,-1], [1,1,1]);
 			vars[i]["extended"+j] = tempCont.addBoolParameter(fingerNames[j]+" extended", "", false);
 			vars[i]["tipPosition"+j] = tempCont.addPoint3DParameter(fingerNames[j]+" tipPosition", "", [0,0,0]);
+			vars[i]["tipPosition"+j].setRange([-1,0,-1], [1,1,1]);
 			vars[i]["carpPosition"+j] = tempCont.addPoint3DParameter(fingerNames[j]+" carpPosition", "", 0);
+			vars[i]["carpPosition"+j].setRange([-1,0,-1], [1,1,1]);
 		}
 	}
 }
@@ -98,7 +103,6 @@ local.sendBytes(30,210,46,255,10); //This will send all the bytes passed in as t
 
 function wsMessageReceived(message)
 {
-	script.log("Websocket message received : " +message);
 	var data = JSON.parse(message);
 	// script.log(data.hands);
 	var handsId = {};
@@ -106,22 +110,22 @@ function wsMessageReceived(message)
 
 	for (var i = 0; i < data.hands.length; i++) {
 		var contId = -1;
-		if (data.hands[i].type == "left") { contId = 1; }
-		if (data.hands[i].type == "right") { contId = 0; }
+		if (data.hands[i].type == "left") { contId = 0; }
+		if (data.hands[i].type == "right") { contId = 1; }
 		if (!data.hands[i].confidence >= 1) {contId = -1;}
 		
 		if (contId >=0) {
-			isPresent[i] = true;
+			isPresent[contId] = true;
 		}
 
 		vars[contId].direction.set(data.hands[i].direction);
 		vars[contId].palmNormal.set(data.hands[i].palmNormal);
-		vars[contId].palmPosition.set(data.hands[i].palmPosition);
-		vars[contId].palmVelocity.set(data.hands[i].palmVelocity);
+		vars[contId].palmPosition.set(toMeters(data.hands[i].palmPosition));
+		vars[contId].palmVelocity.set(toMeters(data.hands[i].palmVelocity));
 		vars[contId].timeVisible.set(data.hands[i].timeVisible);
-		vars[contId].grabAngle.set(data.hands[i].grabAngle);
+		vars[contId].grabAngle.set(data.hands[i].grabAngle/3.141);
 		vars[contId].grabStrength.set(data.hands[i].grabStrength);
-		vars[contId].pinchDistance.set(data.hands[i].pinchDistance);
+		vars[contId].pinchDistance.set(data.hands[i].pinchDistance/1000.0);
 		vars[contId].pinchStrength.set(data.hands[i].pinchStrength);
 		handsId[""+data.hands[i].id] = contId;
 	}
@@ -131,8 +135,8 @@ function wsMessageReceived(message)
 			var type = data.pointables[i].type;
 			vars[contId]["direction"+type].set(data.pointables[i].direction);
 			vars[contId]["extended"+type].set(data.pointables[i].extended);
-			vars[contId]["tipPosition"+type].set(data.pointables[i].tipPosition);
-			vars[contId]["carpPosition"+type].set(data.pointables[i].carpPosition);
+			vars[contId]["tipPosition"+type].set(toMeters(data.pointables[i].tipPosition));
+			vars[contId]["carpPosition"+type].set(toMeters(data.pointables[i].carpPosition));
 		}
 	}
 
@@ -144,7 +148,11 @@ function wsMessageReceived(message)
 			vars[i].isPresent.set(false);
 		}
 	}
+}
 
+function toMeters(vec)
+{
+	return [vec[0] / 1000, vec[1] / 1000,vec[2] / 1000];
 }
 
 function wsDataReceived(data)
