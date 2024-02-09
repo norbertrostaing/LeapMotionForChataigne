@@ -1,7 +1,5 @@
 # LeapMotionForChataigne
  
-To use it, you need to use the version 4 of the leap motion driver "ORION"
-you can find it here : https://developer.leapmotion.com/releases/leap-motion-orion-410-99fe5-crpgl
-
-then you'll have to enable web applications in the settings of the leap motion (icon in the task bar, right clic => parameters => enable web app)
+To use it, you need to use Gemini and 
+https://cdn.discordapp.com/attachments/1124259845307125760/1128265183089934437/gemini-websocket-poc.zip?ex=65d478d5&is=65c203d5&hm=92deda43d3f3852aebbe3707ca4549dcea31aee3331f574a0e917e7880b4fd34&
 
